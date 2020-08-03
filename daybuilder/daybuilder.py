@@ -60,6 +60,10 @@ if __name__ == "__main__":
         path = ["data", default_db]
     db = os.path.join(os.path.dirname(__file__), *path)
 
+    if not os.path.exists(db):
+        from daybuilder.utils import init_db
+        init_db.main(db)
+
     app = QApplication([])
     daybuilder = DayBuilder(db)
     daybuilder.show()

@@ -12,6 +12,19 @@ Dependencies: PyQt5, numpy, pandas
 
 This is still a work in progress and I will update the readme in the future.
 
+Important
+---------
+I'm still learning how to structure a project like this and how to handle
+custom packages and modules.
+
+Currently you need to run the python programs as modules by using the -m flag.
+In order to get the daybuilder application to run you need to be in the top-level daybuilder directory and enter the command
+    python3 -m daybuilder.daybuilder [relative path to database separated by spaces] [database file]
+    - if you provide no arguments the program will create a default database
+      'data/my.db' in the same directory as daybuilder.py
+
+The next thing I want to do is make this more pleasant
+
 Credit
 ------
 I use some of the icons from the Silk icons pack as backup icons.

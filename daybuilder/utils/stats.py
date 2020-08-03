@@ -36,8 +36,14 @@ def load_data(database, start_date=None, end_date=None):
         con.row_factory = sqlite3.Row
         ratings_rows = db_interface.get_ratings_for_stats(con)
         schedule_rows = db_interface.get_schedule_for_stats(con, start_date, end_date)
-    ratings = load_ratings_dataframe(ratings_rows)
-    items = load_items_dataframe(schedule_rows)
+    if ratings_rows:
+        ratings = load_ratings_dataframe(ratings_rows)
+    else:
+        ratings = None
+    if schedule_rows:
+        items = load_items_dataframe(schedule_rows)
+    else:
+        items = None
 
     return ratings, items
 
