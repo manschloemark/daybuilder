@@ -1,6 +1,6 @@
 Day Builder
 -----------
-Day Builder is a simple daily planning program I made for myself.
+Day Builder is a simple daily planning program.
 This program is focused on the importance of making concrete plans
 each day, saving your future self the time and energy required to
 make decisions in the moment.
