@@ -19,6 +19,7 @@ custom packages and modules.
 
 Currently you need to run the python programs as modules by using the -m flag.
 In order to get the daybuilder application to run you need to be in the top-level daybuilder directory and enter the command
+
     python3 -m daybuilder.daybuilder [relative path to database separated by spaces] [database file]
     - if you provide no arguments the program will create a default database
       'data/my.db' in the same directory as daybuilder.py
