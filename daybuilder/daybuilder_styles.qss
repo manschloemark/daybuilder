@@ -1,0 +1,82 @@
+QWidget[font-class=title] {
+    font-family: "Noto Sans", "Helvetica", "Arial";
+    font-size:22px;
+    text-align: center;
+    }
+QWidget[font-class=heading] {
+    font-family: "Noto Sans", "Helvetica", "Arial";
+    font-size: 18px;
+    }
+
+QWidget[font-class=sub-heading] {
+    font-family: "Noto Sans", "Helvetica", "Arial";
+    font-size: 16px;
+    }
+
+QWidget[font-class=detail] {
+    font-family: "Noto Sans", "Helvetica", "Arial";
+    font-size: 16px;
+    font-style: italic;
+    }
+
+QWidget[font-class=content] {
+    font-family: "Noto Sans", "Helvetica", "Arial";
+    font-size: 20px;
+    text-align: center;
+    }
+
+QWidget[id=month-view] {
+    border: 1px solid #868686;
+    border-radius: 8px;
+    }
+
+QLabel[font-class=block-weekday]{
+    text-align: left;
+    font-family = "Noto Mono", "Consolas", "Monospace";o
+}
+
+QLabel[font-class=weekday-heading]{
+    text-align: center;
+    font-family: "Noto Mono", "Consolas", "Monospace";
+    }
+
+QWidget[qclass=dayblock] {
+    border: 1px solid white;
+    border-radius: 2px;
+    }
+
+QWidget[qclass-class=dayblock] QLabel {
+    color: white;
+    }
+
+QGroupBox[qclass=item-type-title] {
+    font-family: "Noto Sans", "Helvetica", "Arial";
+    font-style: italic;
+    text-align: left;
+    }
+
+QWidget[id=schedule-area] {
+    }
+
+QWidget[type=task] {
+    border: 2px solid #255C99;
+    border-radius: 8px;
+    }
+
+QWidget[type=timeframe] {
+    border: 2px solid #F87575;
+    border-radius: 8px;
+    }
+
+QWidget[qclass=schedule-item] QPushButton {
+    }
+
+QWidget[qclass=schedule-item] QDateEdit {
+    font-family: "Noto Mono", "Consolas", "Monospace";
+    font-size: 16px;
+    }
+
+QWidget[qclass=schedule-item] QLabel[qclass=time] {
+    font-family: "Noto Mono", "Consolas", "Monospace";
+    font-size: 16px;
+    }
