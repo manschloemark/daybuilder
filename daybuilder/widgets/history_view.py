@@ -1,6 +1,6 @@
 from calendar import monthrange
 from collections import defaultdict
-from daybuilder.utils import db_interface, util
+from utils import db_interface, util
 import datetime
 from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtGui import QBrush, QPalette, QPainter, QColor

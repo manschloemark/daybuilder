@@ -1,6 +1,6 @@
 import collections
 import datetime
-from daybuilder.utils import db_interface
+from utils import db_interface
 import math
 import pprint
 import sqlite3

@@ -1,7 +1,7 @@
 from collections import defaultdict
-from daybuilder.widgets.rating import DailyRating
-from daybuilder.widgets import scheduleitem
-from daybuilder.utils import db_interface, util
+from .rating import DailyRating
+from . import scheduleitem
+from utils import db_interface, util
 from datetime import date, datetime, time, timedelta
 import logging
 import os

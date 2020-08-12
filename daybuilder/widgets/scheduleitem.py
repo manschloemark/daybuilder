@@ -2,7 +2,7 @@
     that make it easy to work with them """
 
 from datetime import date, datetime, time, timedelta
-from daybuilder.utils import db_interface, util
+from utils import db_interface, util
 import logging
 from PyQt5.QtCore import QSize, pyqtSignal, Qt
 from PyQt5.QtGui import QBrush, QPalette, QColor, QPainter
