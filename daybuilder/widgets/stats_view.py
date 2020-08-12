@@ -78,7 +78,7 @@ class StatsView(QWidget):
         self.refresh()
 
     def display_stats(self):
-        if self.ratings and self.items:
+        if self.ratings.empty and self.items.empty:
             self.display_overall_stats()
             self.display_task_stats()
 
