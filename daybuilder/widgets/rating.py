@@ -1,5 +1,5 @@
 from datetime import date
-from utils import util
+from daybuilder.utils import util
 from PyQt5.QtCore import pyqtSignal
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout, QRadioButton, QButtonGroup, QPushButton, QStackedLayout, QGroupBox
 

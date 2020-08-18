@@ -1,4 +1,4 @@
-from widgets import dailyplanner, stats_view, history_view
+from daybuilder.widgets import dailyplanner, stats_view, history_view
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QStackedLayout, QWidget, QPushButton, QTabWidget
 import os
 import sys
@@ -51,9 +51,9 @@ class DayBuilder(QWidget):
         self.stats.refresh()
         self.set_highlight(self.open_stats)
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        path = sys.argv[1:]
+def main(args):
+    if len(args) > 1:
+        path = args[1:]
     else:
         # TODO: make it so the user can choose a default file
         default_db = "my.db"
@@ -72,3 +72,6 @@ if __name__ == "__main__":
         daybuilder.setStyleSheet(styles.read())
     app.exec_()
 
+
+if __name__ == '__main__':
+    main(sys.argv)

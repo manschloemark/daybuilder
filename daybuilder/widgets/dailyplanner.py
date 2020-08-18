@@ -1,7 +1,7 @@
 from collections import defaultdict
-from .rating import DailyRating
-from . import scheduleitem
-from utils import db_interface, util
+from daybuilder.widgets.rating import DailyRating
+from daybuilder.widgets import scheduleitem
+from daybuilder.utils import db_interface, util
 from datetime import date, datetime, time, timedelta
 import logging
 import os
@@ -429,7 +429,10 @@ class TemplateButton(QPushButton):
         self.setProperty("qclass", "template-button")
         self.setText(row['item_name'])
         self.item_type = int(row['item_type'])
-        self.count = int(row['count'])
+        try:
+            self.count = int(row['count'])
+        except IndexError:
+            self.count = 1
         self.setToolTip(str(self.count))
         # TODO: the db_interface needs to be fixed to get the last_used
         # date
