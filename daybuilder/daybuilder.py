@@ -53,7 +53,10 @@ class DayBuilder(QWidget):
 
 def main(args):
     if len(args) > 1:
-        path = args[1:]
+        if args[1] == '-t':
+            path = ["tests", "data", "randy.db"]
+        else:
+            path = args[1:]
     else:
         # TODO: make it so the user can choose a default file
         default_db = "my.db"

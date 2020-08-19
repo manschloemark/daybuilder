@@ -175,6 +175,25 @@ def get_rating_by_date(con, date):
 
 # Higher Level Functions
 
+def get_table_columns(con, tablename):
+    """
+    Get the column names from a table. I am making this so the stats script is able to create a dataframe even if there are no items in a table.
+    It seems like table names are not able to be substituded
+    using sqlite3's normal method. I'm going to use python's string
+    formatter, but I will have to make sure the string given is not a threat
+
+    Then again, this function would never be called by a user anyway. So I guess it's not really a big deal."""
+    # I think that as long as there are only letters this should be safe.
+    # I'm not very proud of this though.
+    # TODO: check if there is a better way to do this.
+    for char in tablename:
+        if not char.isalpha() or char == '_':
+            raise ValueError
+    cur = con.cursor()
+    cur.execute(f"SELECT * FROM {tablename}")
+    return [item[0] for item in cur.description]
+
+
 def time_overlap(con, item_type, start, duration):
     """
         User Defined Function that prevents you from scheduling

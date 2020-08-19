@@ -4,7 +4,7 @@ from daybuilder.utils import db_interface, stats, util
 import datetime
 from PyQt5.QtCore import Qt, QDate
 from PyQt5.QtGui import QBrush, QPalette, QPainter, QColor
-from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout, QDateEdit, QGridLayout, QPushButton, QVBoxLayout, QApplication, QStyleOption, QStyle, QComboBox, QCalendarWidget, QRadioButton, QStackedLayout, QCheckBox, QTextEdit
+from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout, QDateEdit, QGridLayout, QPushButton, QVBoxLayout, QApplication, QStyleOption, QStyle, QComboBox, QCalendarWidget, QRadioButton, QStackedLayout, QCheckBox, QTextEdit, QSizePolicy
 import sqlite3
 import sys
 
@@ -23,8 +23,14 @@ class StatsView(QWidget):
     def __init__(self, db, *args, **kwargs):
         super(StatsView, self).__init__(*args, **kwargs)
         self.db = db
-        self.grid = QGridLayout(self)
+        self.stack = QStackedLayout(self)
+        self.stats_container = QWidget()
+        self.grid = QGridLayout(self.stats_container)
         self.ratings, self.items = None, None
+
+        self.no_data = QLabel("Not enough data to display statistics.")
+        self.no_data.setProperty("font-class", "heading")
+        self.no_data.setAlignment(Qt.AlignCenter)
 
         mainlabel = QLabel("My Stats")
         mainlabel.setProperty("font-class", "title")
@@ -75,15 +81,24 @@ class StatsView(QWidget):
         self.grid.addWidget(self.least_completed, 7, 2, 1, 2)
 
         self.grid.setAlignment(Qt.AlignCenter)
+
+        self.stack.addWidget(self.no_data)
+        self.stack.addWidget(self.stats_container)
+        self.stack.setAlignment(Qt.AlignCenter)
         self.refresh()
 
     def display_stats(self):
-        if self.ratings.empty and self.items.empty:
+        if self.ratings.empty or self.items.empty:
+            self.stack.setCurrentWidget(self.no_data)
+        else:
+            self.stack.setCurrentWidget(self.stats_container)
             self.display_overall_stats()
             self.display_task_stats()
 
     def get_data(self):
         self.ratings, self.items = stats.load_data(self.db)
+
+
 
     def display_overall_stats(self):
         avg_rating = self.ratings.rating.mean()
@@ -93,10 +108,13 @@ class StatsView(QWidget):
         avg_rating_word = util.rating_value_map[round(avg_rating)]
         self.overall_rating.setText(f"{avg_rating:.2} ({avg_rating_word})")
         rating_counts = self.ratings.rating.value_counts()
-        task_completion = self.items["completed"].value_counts(normalize=True)[True] * 100
-        self.overall_completion.setText(
+        try:
+            task_completion = self.items["completed"].value_counts(normalize=True)[True] * 100
+            self.overall_completion.setText(
                 f"{round(task_completion, 2)}%"
                 )
+        except KeyError:
+            self.overall_completion.setText('0%')
 
     def display_task_stats(self):
         # NOTE there has to be a better way to do this
@@ -104,18 +122,20 @@ class StatsView(QWidget):
         task_counts = tasks.item_name.value_counts()
         self.most_common.setText(task_counts.index[0])
 
-        # This returns a sorted pandas.Series containing each item_name and the % they are completed
-        # and not completed
-        # TODO : figure out how to extract the item name with the highest True % and one with the highest False % (lowest True)
         comp_rates = tasks.groupby("item_name").completed.value_counts(normalize=True)
-        comp_rates_true = comp_rates[comp_rates.index.get_level_values('completed').isin([True])].sort_values()
+        try:
+            comp_rates_true = comp_rates[comp_rates.index.get_level_values('completed').isin([True])].sort_values()
 
-        worst_name, worst_rate = comp_rates_true.head(1).index[0][0], comp_rates_true.head(1)[0]
-        best_name, best_rate = comp_rates_true.tail(1).index[0][0], comp_rates_true.tail(1)[0]
+            worst_name, worst_rate = comp_rates_true.head(1).index[0][0], comp_rates_true.head(1)[0]
+            best_name, best_rate = comp_rates_true.tail(1).index[0][0], comp_rates_true.tail(1)[0]
 
-        self.most_completed.setText(f"{best_name} ({round(best_rate * 100)}%)")
-        self.least_completed.setText(f"{worst_name} ({round(worst_rate * 100)}%)")
+            self.most_completed.setText(f"{best_name} ({round(best_rate * 100)}%)")
+            self.least_completed.setText(f"{worst_name} ({round(worst_rate * 100)}%)")
+        except Exception:
+            self.most_completed.setText("No tasks have been completed")
+            self.least_completed.setText("No tasks have been completed")
 
+    # Currently not in use
     def display_weekday_stats(self):
         weekday_ratings = self.ratings.groupby(by=self.ratings.date.dt.weekday)
         for name, group in weekday_ratings:
