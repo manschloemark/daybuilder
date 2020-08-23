@@ -68,7 +68,14 @@ class HistoryView(QWidget):
         self.view_selection.currentTextChanged.connect(self.set_view)
         date_label = QLabel("From: ")
         date_label.setProperty("font-class", "sub-heading")
-        self.date_entry = QDateEdit(QDate.currentDate())
+
+        today = QDate.currentDate()
+        if today.dayOfWeek() != 7:
+            delta = today.dayOfWeek() * -1
+            last_sunday = today.addDays(delta)
+            self.date_entry = QDateEdit(last_sunday)
+        else:
+            self.date_entry = QDateEdit(today)
         self.date_entry.setDisplayFormat(DATE_EDIT_FORMAT)
         self.date_entry.dateChanged.connect(self.load_blocks)
         self.date_entry.setSizePolicy(QSizePolicy(0, 0))
@@ -121,10 +128,6 @@ class HistoryView(QWidget):
         self.layout.addWidget(self.view_legend, 3, 0, 1, 6)
 
         self.set_view()
-        # By default load from most recent Sunday
-        last_sunday = datetime.date.today() - datetime.timedelta(days=(datetime.date.today().weekday() % 6) + 1)
-        self.date_entry.setDate(last_sunday)
-
         self.layout.setAlignment(Qt.AlignTop)
         self.layout.setAlignment(self.view_legend, Qt.AlignCenter)
 
