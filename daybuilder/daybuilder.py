@@ -37,19 +37,6 @@ class DayBuilder(QWidget):
         elif page_number == 2:
             self.history.set_view()
 
-    def raise_history(self):
-        """ Set the history view as the main content,
-        and refresh the data since it might have been changed"""
-        self.main_stack.setCurrentWidget(self.history)
-        self.history.set_view()
-        self.set_highlight(self.open_history)
-
-    def raise_stats(self):
-        """ Set the statistics view as the main content and 
-        refresh the data """
-        self.main_stack.setCurrentWidget(self.stats)
-        self.stats.refresh()
-        self.set_highlight(self.open_stats)
 
 def main(args):
     if len(args) > 1:

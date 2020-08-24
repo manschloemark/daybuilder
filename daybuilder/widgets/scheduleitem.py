@@ -219,6 +219,12 @@ class Task(ScheduleItem):
 
         self.name = QCheckBox(row['item_name'])
         self.name.setProperty("font-class", "content")
+        # NOTE: I would like to change the way I save changes to the database.
+        # The ScheduleItem.update signal causes the DailyPlanner widget
+        # to call the ScheduleItem.update_db method on each ScheduleItem
+        # in the given day. This feels wasteful. Currently the DailyPlanner
+        # needs to call update_db because it provides the connection to the db.
+        self.name.stateChanged.connect(lambda x: self.updated.emit())
         # Since this class defines completed to be a property which uses
         # self.name, I have to initialize self.name before executing
         # the ScheduleItem's init, as that method accesses the completed
