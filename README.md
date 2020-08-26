@@ -11,10 +11,12 @@ Made in Python using sqlite3, PyQt5, and Pandas
 ![View of the daily planner](./examples/dailyplanner.png)
 - Click 'New Plan' or any of the buttons in the 'Quick Reuse' section to open the 'New Task Form'
 ![Adding a new plan](./examples/new-task.png)
-- schedule plans for specific dates and times.
-- split days into timeframes to help visualize your day and prepare for the different parts of it
+- schedule tasks or timeframes for specific dates and times
+  - tasks are like TODO's, things you want to do. They can be marked as complete by clicking the checkbox.
+  - timeframes are items you can plan that visually contain tasks whose times overlap with them.
 - rate your days on a scale from 1 to 5
-- quickly schedule tasks and timeframes you have planned previously using the template sidebar
+- quickly reuse tasks or timeframes by using the Quick Reuse sidebar.
+  - Ensures that your naming is consistent and the stats are correct.
 
 
 ### Statistics
@@ -29,14 +31,10 @@ Made in Python using sqlite3, PyQt5, and Pandas
 
 ## TODO
 
-### New Features
 - In the Daily Planner section make a split view where you can record the outcomes of your day and compare them to your plans
 - Learn more about Pandas and add more statistics
   - 'You are more likely to complete X in the morning / night'
   - 'You tend to rate days with X task higher than average'
-
-### Program Style/Structure
-- Learn how to write and use setup.py
 
 ## Credit
 I use the Silk icons pack when the user does not have any Qt themes.
