@@ -31,10 +31,23 @@ Made in Python using sqlite3, PyQt5, and Pandas
 
 ## TODO
 
-- In the Daily Planner section make a split view where you can record the outcomes of your day and compare them to your plans
-- Learn more about Pandas and add more statistics
-  - 'You are more likely to complete X in the morning / night'
-  - 'You tend to rate days with X task higher than average'
+I would like to rebuild the program from scratch.<br>My main goal is to simplify the repository and use some of Qt's features that I didn't even know about at the start.<br>There are also a lot of design decisions that I want to reconsider now that I have had some time to use the application as part of my daily routine.
+Here are some things I will be working on:
+  - Add keyboard shortcuts
+    - I would like this program to be fully usable without a mouse.
+    - The program should be fast and responsive enough to make keyboard commands more efficient than using a mouse
+  - Use more features from Qt to simplify the code
+  - Add User Preferences
+    - Set default save locations
+    - Customize appearance
+  - Improve Daily Planning feature
+    - Add a new type of schedule item called 'Activities' that are tasks with sub-tasks
+    - Make it easier to delete / update multiple tasks
+    - take notes about the day during the day and compare them to your plans
+    - 'Pomodoro' / Automatic Break feature that will add breaks to your plans at regular customizable intervals
+  - Learn more about Pandas and add more statistics
+  - Simplify the code base / choose better names for things
+  - Make it easier to run the program
 
 ## Credit
 I use the Silk icons pack when the user does not have any Qt themes.
