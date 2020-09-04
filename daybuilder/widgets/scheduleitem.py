@@ -6,11 +6,11 @@ from daybuilder.utils import db_interface, util
 import logging
 from PyQt5.QtCore import QSize, pyqtSignal, Qt
 from PyQt5.QtGui import QBrush, QPalette, QColor, QPainter
-from PyQt5.QtWidgets import QWidget, QLabel, QGridLayout, QPushButton, QCheckBox, QTextEdit, QFrame, QStyleOption, QStyle, QVBoxLayout, QTimeEdit, QMessageBox, QSizePolicy
+from PyQt5.QtWidgets import QWidget, QLabel, QGridLayout, QPushButton, QCheckBox, QTextEdit, QFrame, QStyleOption, QStyle, QVBoxLayout, QTimeEdit, QMessageBox, QSizePolicy, QHBoxLayout
 
 class ScheduleItem(QWidget):
     item_type = None
-    updated = pyqtSignal()
+    updated = pyqtSignal(tuple)
     deleted = pyqtSignal(int)
 
     def __init__(self, row, *args, **kwargs):
@@ -21,7 +21,6 @@ class ScheduleItem(QWidget):
         self.id = row['active_id']
         self.item_id = row['item_id']
         self.description = row['description']
-        # TODO : implement tags somehow.
         self.tags = []
         day = datetime.fromisoformat(row['start'])
         self.date = day.date()
@@ -32,6 +31,8 @@ class ScheduleItem(QWidget):
         # Create subwidgets
         self.grid = QGridLayout(self)
         self.editing = False
+        edit_container = QWidget()
+        self.edit_controls = QHBoxLayout(edit_container)
         self.edit_button = QPushButton(icon=util.edit_icon(), text="Edit")
         self.save_button = QPushButton(icon=util.save_icon(), text="Save")
         self.cancel_button = QPushButton(icon=util.cancel_icon(), text="Undo")
@@ -40,6 +41,15 @@ class ScheduleItem(QWidget):
         self.save_button.clicked.connect(self.save_edit)
         self.cancel_button.clicked.connect(self.cancel_edit)
         self.delete_button.clicked.connect(self.confirm_deletion)
+        self.edit_controls.addWidget(self.save_button)
+        self.edit_controls.addWidget(self.cancel_button)
+        self.edit_controls.addWidget(self.edit_button)
+        self.edit_controls.addWidget(self.delete_button)
+        retain_policy = self.save_button.sizePolicy()
+        retain_policy.setRetainSizeWhenHidden(True)
+        self.save_button.setSizePolicy(retain_policy)
+        self.cancel_button.setSizePolicy(retain_policy)
+
         self.start_label = QLabel(f"{self.start.strftime('%I:%M %p')}")
         self.time_label_separator = QLabel("to")
         self.end_label = QLabel(f"{self.end.strftime('%I:%M %p')}")
@@ -63,22 +73,15 @@ class ScheduleItem(QWidget):
         self.grid.addWidget(self.end_time_edit, 0, 3)
         self.start_time_edit.hide()
         self.end_time_edit.hide()
-        self.grid.addWidget(self.desc_box, 1, 0, 1, 7)
-        self.grid.addWidget(self.edit_button, 0, 4, 1, 3)
-        self.grid.addWidget(self.save_button, 0, 4)
-        self.grid.addWidget(self.cancel_button, 0, 5)
-        self.grid.addWidget(self.delete_button, 0, 6)
+        self.grid.addWidget(self.desc_box, 1, 0, 1, 5)
+        self.grid.addWidget(edit_container, 0, 4)
+
         self.save_button.hide()
         self.cancel_button.hide()
         self.delete_button.hide()
         self.grid.setRowMinimumHeight(1, 64)
         self.grid.setRowStretch(1, 2)
-
-        self.edit_button.setSizePolicy(QSizePolicy(0, 0))
-        #self.save_button.setSizePolicy(QSizePolicy(0, 0))
-        #self.cancel_button.setSizePolicy(QSizePolicy(0, 0))
-        #self.delete_button.setSizePolicy(QSizePolicy(0, 0))
-        self.grid.setAlignment(self.edit_button, Qt.AlignRight)
+        self.grid.setAlignment(edit_container, Qt.AlignRight)
 
         self.start_label.setSizePolicy(QSizePolicy(0, 0))
         self.end_label.setSizePolicy(QSizePolicy(0, 0))
@@ -89,13 +92,6 @@ class ScheduleItem(QWidget):
 
         if self.desc_box.toPlainText() == "":
             self.desc_box.hide()
-
-        for widget in (self.start_time_edit, self.end_time_edit, self.cancel_button, self.save_button, self.delete_button):
-            size_policy = widget.sizePolicy()
-            size_policy.setRetainSizeWhenHidden(True)
-            widget.setSizePolicy(size_policy)
-
-
 
         self.setStyleSheet("QLabel{text-align: center;}")
 
@@ -160,15 +156,10 @@ class ScheduleItem(QWidget):
 
         return True
 
-
     def restore_data(self):
         self.desc_box.setText(self.description)
         self.start_time_edit.setTime(self.start)
         self.end_time_edit.setTime(self.end)
-        # TODO : implement tags. If tags were a thing you'd need to restore them here
-        #if self.duration == 0:
-        #    self.time_label_separator.hide()
-        #    self.end_label.hide()
 
     def save_edit(self):
         if not self.update_data():
@@ -176,7 +167,10 @@ class ScheduleItem(QWidget):
             msg.warning(self, "Invalid Info", "Start time should be earlier than End time")
             return
         self.stop_editing()
-        self.updated.emit()
+        self.updated.emit((self.id, self.item_id, self.tags,
+                            self.description,
+                            datetime.combine(self.date, self.start),
+                            self.duration, self.completed))
 
     def cancel_edit(self):
         self.restore_data()
@@ -196,18 +190,21 @@ class ScheduleItem(QWidget):
         if response == QMessageBox.Yes:
             self.deleted.emit(self.id)
 
-
     def overlaps(self, item):
         if self.start < item.end and self.end > item.start:
             return True
         return False
 
-
-    def update_db(self, con):
-        db_interface.update_schedule_item(con, self.id, self.item_id, self.tags, self.description, datetime.combine(self.date, self.start), self.duration, self.completed)
-
-    def __str__(self):
-        raise NotImplementedError()
+    def paintEvent(self, paint_event):
+        """
+            I needed to override the paintEvent method in order to get
+            these custom widgets to draw their backgrounds.
+            https://wiki.qt.io/How_to_Change_the_Background_Color_of_QWidget
+        """
+        opt = QStyleOption()
+        opt.initFrom(self)
+        p = QPainter(self)
+        self.style().drawPrimitive(QStyle.PE_Widget, opt, p, self)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({str(self.__dict__)})"
@@ -224,7 +221,10 @@ class Task(ScheduleItem):
         # to call the ScheduleItem.update_db method on each ScheduleItem
         # in the given day. This feels wasteful. Currently the DailyPlanner
         # needs to call update_db because it provides the connection to the db.
-        self.name.stateChanged.connect(lambda x: self.updated.emit())
+        self.name.stateChanged.connect(lambda x: self.updated.emit((self.id, self.item_id, self.tags,
+                            self.description,
+                            datetime.combine(self.date, self.start),
+                            self.duration, self.completed)))
         # Since this class defines completed to be a property which uses
         # self.name, I have to initialize self.name before executing
         # the ScheduleItem's init, as that method accesses the completed
@@ -234,17 +234,6 @@ class Task(ScheduleItem):
         self.setProperty("type", "task")
         self.setAutoFillBackground(True)
 
-    def paintEvent(self, paint_event):
-        """
-            I needed to override the paintEvent method in order to get
-            these custom widgets to draw their backgrounds.
-            https://wiki.qt.io/How_to_Change_the_Background_Color_of_QWidget
-        """
-        opt = QStyleOption()
-        opt.initFrom(self)
-        p = QPainter(self)
-        self.style().drawPrimitive(QStyle.PE_Widget, opt, p, self)
-
     @property
     def completed(self):
         return self.name.isChecked()
@@ -252,7 +241,6 @@ class Task(ScheduleItem):
     @completed.setter
     def completed(self, complete):
         self.name.setChecked(complete)
-
 
     def __str__(self):
         """ Temporary method formatted for a crude canvas """
@@ -278,13 +266,6 @@ class Timeframe(ScheduleItem):
         self.grid.addWidget(self.task_container, 2, 1, 1, 6)
         self.setProperty("type", "timeframe")
         self.setAutoFillBackground(True)
-
-    def paintEvent(self, paint_event):
-        """ https://wiki.qt.io/How_to_Change_the_Background_Color_of_QWidget """
-        opt = QStyleOption()
-        opt.initFrom(self)
-        p = QPainter(self)
-        self.style().drawPrimitive(QStyle.PE_Widget, opt, p, self)
 
     def add_task(self, task):
         self.task_vbox.addWidget(task)

@@ -134,7 +134,7 @@ class ScheduleArea(QWidget):
                 # This line is honestly redundant but I'll leave it just in case
                 day = datetime.fromisoformat(row["start"]).date()
                 item = scheduleitem.get_item(row)
-                item.updated.connect(lambda: self.refresh(day))
+                item.updated.connect(self.update_item)
                 item.deleted.connect(self.delete_item)
                 self.items.append(item)
         self.items = sorted(self.items, key=lambda d: item.start)
@@ -192,14 +192,16 @@ class ScheduleArea(QWidget):
             db_interface.delete_schedule_item(con, active_id)
         self.refresh()
 
+    def update_item(self, args):
+        with sqlite3.connect(self.db) as con:
+            db_interface.update_schedule_item(con, *args)
+        self.refresh()
+
     def refresh(self, new_date=None):
         if new_date:
             self.view_date = new_date
+            self.load_schedule()
         self.clear_view()
-        with sqlite3.connect(self.db) as con:
-            for item in self.items:
-                item.update_db(con)
-        self.load_schedule()
         self.display_items()
 
 
