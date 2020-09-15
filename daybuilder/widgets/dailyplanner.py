@@ -137,7 +137,6 @@ class ScheduleArea(QWidget):
                 item.updated.connect(self.update_item)
                 item.deleted.connect(self.delete_item)
                 self.items.append(item)
-        self.items = sorted(self.items, key=lambda d: item.start)
 
     def display_items(self):
         """ This will need huge reworks to make it so it is placing
@@ -152,7 +151,7 @@ class ScheduleArea(QWidget):
             self.empty_message.hide()
             # get timeframes
             qeue = []
-            for item in self.items:
+            for item in sorted(self.items, key=lambda i: i.start):
                 if item.item_type == 1:
                     qeue.append(item)
                 elif item.item_type == 0:
