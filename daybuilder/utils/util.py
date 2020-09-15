@@ -8,11 +8,11 @@ item_types = {0: "Task", 1: "Timeframe",}
 rating_value_map = {None: "N/A", 1: "Terrible", 2: "Bad", 3: "Okay", 4: "Good", 5: "Amazing"}
 rating_color_map = {
         None: "#646464",
-        1: "#9d2424",
-        2: "#d0521d",
-        3: "#e1a500",
-        4: "#88b03a",
-        5: "#229933"
+        1: "#8e0501",
+        2: "#d94008",
+        3: "#d0952f",
+        4: "#8f9325",
+        5: "#52711e"
     }
 weekday_map = {0: "Sunday", 1: "Monday", 2: "Tuesday", 3: "Wednesday", 4: "Thursday", 5: "Friday", 6: "Saturday"}
 # Icons
