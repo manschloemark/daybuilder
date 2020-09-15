@@ -136,17 +136,36 @@ class ScheduleItem(QWidget):
         self.editing = False
 
     def update_data(self):
-        self.description = self.desc_box.toPlainText()
-        # TODO : implement tags. If tags were a thing you'd need to update them here
-        qstart = self.start_time_edit.time()
-        qend = self.end_time_edit.time()
+        new_start = self.start_time_edit.time()
+        new_end = self.end_time_edit.time()
 
-        if qstart > qend:
+        if self.start > self.end:
             return False
-        self.start = time(qstart.hour(), qstart.minute())
-        self.end = time(qend.hour(), qend.minute())
 
-        self.duration = (datetime.combine(self.date, self.end) - datetime.combine(self.date, self.start)).seconds / 60
+        self.description = self.desc_box.toPlainText()
+        self.tags = []
+        self.start = time(new_start.hour(), new_start.minute())
+        self.end = time(new_end.hour(), new_end.minute())
+        self.duration = int(new_start.secsTo(new_end) // 60)
+        new_datetime = datetime.combine(self.date, self.start)
+
+        self.update_display()
+
+        self.updated.emit((self.id, self.item_id, self.tags,
+                            self.description,
+                            new_datetime, self.duration,
+                            self.completed))
+        return True
+
+    def update_display(self):
+        self.start_label.setText(f"{self.start.strftime('%I:%M %p')}")
+        self.end_label.setText(f"{self.end.strftime('%I:%M %p')}")
+        if self.duration:
+            self.time_label_separator.show()
+            self.end_label.show()
+        else:
+            self.time_label_separator.hide()
+            self.end_label.hide()
         #if self.duration != 0:
         #    self.time_label_separator.show()
         #    self.end_label.show()
@@ -154,7 +173,6 @@ class ScheduleItem(QWidget):
         #    self.time_label_separator.hide()
         #    self.end_label.hide()
 
-        return True
 
     def restore_data(self):
         self.desc_box.setText(self.description)
@@ -166,11 +184,8 @@ class ScheduleItem(QWidget):
             msg = QMessageBox()
             msg.warning(self, "Invalid Info", "Start time should be earlier than End time")
             return
+        self.update_display()
         self.stop_editing()
-        self.updated.emit((self.id, self.item_id, self.tags,
-                            self.description,
-                            datetime.combine(self.date, self.start),
-                            self.duration, self.completed))
 
     def cancel_edit(self):
         self.restore_data()
