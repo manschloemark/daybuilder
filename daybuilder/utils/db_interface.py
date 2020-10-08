@@ -257,7 +257,7 @@ def update_schedule_item(con, active_id, item_id, tags, description, start, dura
           """
     if tags:
         set_tags(item_id, tags)
-    iso_start = start.isoformat(timespec="minutes")
+    iso_start = start.toString(Qt.ISOFormat)
     cur = con.cursor()
     cur.execute(sql, (description, iso_start, duration, completed, active_id))
 

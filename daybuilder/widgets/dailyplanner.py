@@ -46,7 +46,7 @@ def load_schedule(self):
         rows = db_interface.get_schedule(con)
         for row in rows:
             day = datetime.fromisoformat(row["start"]).date()
-            item = scheduleitem.get_item(row)
+            item = scheduleitem.create_schedule_item(row)
             self.schedule[day].append(item)
 
 
@@ -133,7 +133,7 @@ class ScheduleArea(QWidget):
             for row in rows:
                 # This line is honestly redundant but I'll leave it just in case
                 day = datetime.fromisoformat(row["start"]).date()
-                item = scheduleitem.get_item(row)
+                item = scheduleitem.create_schedule_item(row)
                 item.updated.connect(self.update_item)
                 item.deleted.connect(self.delete_item)
                 self.items.append(item)
@@ -152,7 +152,7 @@ class ScheduleArea(QWidget):
                 self.empty_message.hide()
             # get timeframes
             qeue = []
-            for item in sorted(self.items, key=lambda i: i.start):
+            for item in sorted(self.items, key=lambda i: i.start_time):
                 if item.item_type == 1:
                     qeue.append(item)
                 elif item.item_type == 0:
