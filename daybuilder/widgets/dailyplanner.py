@@ -148,7 +148,8 @@ class ScheduleArea(QWidget):
         if len(self.items) == 0:
             self.display_no_items()
         else:
-            self.empty_message.hide()
+            if self.empty_message.isVisible():
+                self.empty_message.hide()
             # get timeframes
             qeue = []
             for item in sorted(self.items, key=lambda i: i.start):
@@ -163,14 +164,14 @@ class ScheduleArea(QWidget):
                             break
                     if not plotted:
                         qeue.append(item)
-            for item in qeue:
-                self.content_grid.addWidget(item)
+            for widget in qeue:
+                self.content_grid.addWidget(widget)
 
     def fix_scroll_area(self):
         """ Set the scroll area to scroll to the top
             This is meant to be called when you change page """
         # TODO make it so when a scheduleitem is updated this scrolls
-        # back to the item instead of the top.
+        # back to that item instead of the top.
         # And make sure the scroll area is wide enough to show the entire schedule item
         #self.scroll_area.setMinimumWidth(self.content_grid.itemAt(0).widget().sizeHint().width() + 20)
         self.scroll_area.ensureVisible(0, 0)
@@ -179,11 +180,51 @@ class ScheduleArea(QWidget):
         self.empty_message.show()
         self.scroll_area.ensureWidgetVisible(self.empty_message)
 
+    # NOTE to self:
+    #      I use deleteLater here to clear the view because
+    #      my previous solution, setParent(None) was causing
+    #      log messages to appear.
+    #      The message was something like:
+    #      xcb error: BadWindow
+    #
+    #      Except with a lot more text so it filled up the terminal.
+    #
+    #      For some reasons those messages only appeared when using
+    #      kvantum themes.
+    #
+    #      I suppose it makes sense, because None is certainly not a valid window.
+    #
+    #      Using deleteLater here means the program is more wasteful when
+    #      updating an item.
+    #      the update_item method calls refresh which calls clear_view.
+    #      Previously it wasn't as bad because the widgets were not deleted, they
+    #      just didn't have a parent. You could immediately call display_items after
+    #      clear_view because you still had the widgets in a list.
+    #      Now the widgets get deleted so the refresh method has to call load_schedule
+    #      after clear_view every time.
+    #
+    #      So now doing something as simple as marking a task as complete deletes the
+    #      entire schedule and you have to access the database to rebuild the items
+    #
+    #      Additionally, tasks calling the update_item method when they are marked as complete
+    #      is wasteful on it's own. The only reason I do that is because it was faster at the time.
+    #      The update_item method calls refresh because it is used when any scheudle item is updated,
+    #      regardless of the reason, and in the event of updating an item time, it may require the
+    #      items to be rearranged.
+    #
+    #      Fortunately this app takes place on a small enough scale that this doesn't matter.
+    #
+    #      The alternative to this is writing an algorithm that checks each items times to see if
+    #      they need to be reordered after an update.
+    #      And maybe making a different method that only marks an item as complete.
+    #
+    #      I'll keep this in mind when I do a rewrite.
+
     def clear_view(self):
         logging.debug("Before delete: %d", self.content_grid.count())
         for i in reversed(range(self.content_grid.count())):
             if self.content_grid.itemAt(i).widget() is not self.empty_message:
-                self.content_grid.itemAt(i).widget().setParent(None)
+                self.content_grid.itemAt(i).widget().deleteLater()
         logging.debug("After delete: %d", self.content_grid.count())
 
     def delete_item(self, active_id):
@@ -197,10 +238,10 @@ class ScheduleArea(QWidget):
         self.refresh()
 
     def refresh(self, new_date=None):
+        self.clear_view()
         if new_date:
             self.view_date = new_date
-            self.load_schedule()
-        self.clear_view()
+        self.load_schedule()
         self.display_items()
 
 

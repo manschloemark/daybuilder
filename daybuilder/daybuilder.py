@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from daybuilder.widgets import dailyplanner, stats_view, history_view
 from PyQt5.QtWidgets import QApplication, QVBoxLayout, QHBoxLayout, QStackedLayout, QWidget, QPushButton, QTabWidget
 import os
