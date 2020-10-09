@@ -2,11 +2,10 @@ from collections import defaultdict
 from daybuilder.widgets.rating import DailyRating
 from daybuilder.widgets import scheduleitem
 from daybuilder.utils import db_interface, util
-from datetime import date, datetime, time, timedelta
 import logging
 import os
 import sqlite3
-from PyQt5.QtCore import Qt, pyqtSignal, QDate, QTime
+from PyQt5.QtCore import Qt, pyqtSignal, QDate, QTime, QDateTime
 from PyQt5.QtWidgets import (
     QMainWindow,
     QApplication,
@@ -158,7 +157,7 @@ class ScheduleArea(QWidget):
                 elif item.item_type == 0:
                     plotted = False
                     for other_item in self.items:
-                        if other_item.item_type == 1 and item.overlaps(other_item):
+                        if other_item.item_type == 1 and item.overlaps(other_item) == -2:
                             plotted = True
                             other_item.add_task(item)
                             break

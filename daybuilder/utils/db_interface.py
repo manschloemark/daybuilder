@@ -6,7 +6,7 @@
 # db_interface.py
 import logging
 import sqlite3
-import datetime
+from PyQt5.QtCore import QDateTime, QDate, Qt
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,6 @@ class TimeOverlapError(Exception):
     pass
 
 # --- Items Table
-
 def insert_item(con, item_type, item_name):
     sql = "INSERT INTO items (item_type, item_name) VALUES (?, ?)"
     cur = con.cursor()
@@ -126,36 +125,31 @@ def get_schedule_table(con):
 
 def insert_rating_row(con, date, rating):
     sql = "INSERT INTO ratings VALUES (?, ?)"
-    isodate = date.isoformat()
+    isodate = date.toString(Qt.ISOFormat)
     cur = con.cursor()
     cur.execute(sql, (isodate, rating))
 
 def update_rating_row(con, date, rating):
     sql = "UPDATE ratings SET rating = ? WHERE date = ?"
-    isodate = date.isoformat()
+    isodate = date.toString(Qt.ISODate)
     cur = con.cursor()
-    cur.execute(sql, (rating, date))
+    cur.execute(sql, (rating, isodate))
 
 def get_ratings(con, oldest_date, newest_date):
     sql = "SELECT * FROM ratings"
-    oldest_date_sql = " date(date) >= ?"
-    newest_date_sql = " date(date) <= ?"
+    
     args = []
     if oldest_date or newest_date:
         sql += " WHERE"
     if oldest_date:
-        if not isinstance(oldest_date, (datetime.datetime, datetime.date)):
-            raise ValueError(f'oldest must be datetime.date, not {type(oldest_date)}')
-        sql += oldest_date_sql
-        args.append(oldest_date.isoformat())
+        args.append(oldest_date.toString(Qt.ISOFormat))
+        sql += " date(date) >= ?"
     if newest_date:
-        if not isinstance(newest_date, (datetime.datetime, datetime.date)):
-            raise ValueError(f'newest must be datetime.date, not {type(newest_date)}')
         if oldest_date:
             sql += " AND "
-        sql += newest_date_sql
-        args.append(newest_date.isoformat())
-
+        sql += " date(date) <= ?"
+        args.append(newest_date.toString(Qt.ISOFormat))
+        
     cur = con.cursor()
     cur.execute(sql, tuple(args))
     rows = cur.fetchall()
@@ -163,7 +157,7 @@ def get_ratings(con, oldest_date, newest_date):
 
 def get_rating_by_date(con, date):
     sql = "SELECT rating FROM ratings WHERE date = ?"
-    isodate = date.isoformat()
+    isodate = date.toString(Qt.ISOFormat)
     cur = con.cursor()
     cur.execute(sql, (isodate,))
 
@@ -193,30 +187,32 @@ def get_table_columns(con, tablename):
     cur.execute(f"SELECT * FROM {tablename}")
     return [item[0] for item in cur.description]
 
+# NOTE I don't know if I need this?
+# NOTE If it turns out I do need this I'll have to convert it to
+#      work with QDate
+# def time_overlap(con, item_type, start, duration):
+#     """
+#         User Defined Function that prevents you from scheduling
+#         two items of the same type with overlapping times.
+#         I am doing this because I'm not sure how I would display
+#         two Tasks or timeframes that have overlapping times
 
-def time_overlap(con, item_type, start, duration):
-    """
-        User Defined Function that prevents you from scheduling
-        two items of the same type with overlapping times.
-        I am doing this because I'm not sure how I would display
-        two Tasks or timeframes that have overlapping times
+#         Created in the database with sqlite3.create_function
+#         in the create_schedule_table function
+#     """
+#     con.row_factory = sqlite3.Row # NOTE : there has to be a better way to handle passing database connections around
+#     sql = """SELECT item_type, start, duration FROM schedule
+#              JOIN items on items.item_id = schedule.item_id"""
+#     cur = con.cursor()
+#     cur.execute(sql)
+#     rows = cur.fetchall()
 
-        Created in the database with sqlite3.create_function
-        in the create_schedule_table function
-    """
-    con.row_factory = sqlite3.Row # NOTE : there has to be a better way to handle passing database connections around
-    sql = """SELECT item_type, start, duration FROM schedule
-             JOIN items on items.item_id = schedule.item_id"""
-    cur = con.cursor()
-    cur.execute(sql)
-    rows = cur.fetchall()
-
-    for row in rows:
-        starts_before_ends = start < (datetime.datetime.fromisoformat(row['start']) + datetime.timedelta(minutes=row['duration']))
-        ends_after_starts = (start + datetime.timedelta(minutes=duration)) > datetime.datetime.fromisoformat(row['start'])
-        if (item_type == row['item_type']) and starts_before_ends and ends_after_starts:
-            return True
-    return False
+#     for row in rows:
+#         starts_before_ends = QDateTime.fromString(row['start'], Qt.ISOFormat).addSecs(row[duration * 60])
+#         ends_after_starts = 
+#         if (item_type == row['item_type']) and starts_before_ends and ends_after_starts:
+#             return True
+#     return False
 
 # Saving data
 
@@ -256,7 +252,7 @@ def update_schedule_item(con, active_id, item_id, tags, description, start, dura
              WHERE active_id = ?;
           """
     if tags:
-        set_tags(item_id, tags)
+        set_tags(con, item_id, tags)
     iso_start = start.toString(Qt.ISOFormat)
     cur = con.cursor()
     cur.execute(sql, (description, iso_start, duration, completed, active_id))
@@ -329,7 +325,7 @@ def get_schedule_by_date(con, date):
               JOIN items ON items.item_id = schedule.item_id
               WHERE date(start) = ?
               ORDER BY start;"""
-    iso_date = date.isoformat()
+    iso_date = date.toString(Qt.ISOFormat)
     cur = con.cursor()
     cur.execute(sql, (iso_date,))
     rows = cur.fetchall()
@@ -363,14 +359,14 @@ def get_schedule(con, oldest_date=None, newest_date=None):
         if not isinstance(oldest_date, (datetime.datetime, datetime.date)):
             raise ValueError(f'oldest_date must be datetime.date, not {type(oldest_date)}')
         sql += oldest_date_sql
-        args.append(oldest_date.isoformat())
+        args.append(oldest_date.toString(Qt.ISOFormat))
     if newest_date:
         if not isinstance(newest_date, (datetime.datetime, datetime.date)):
             raise ValueError(f'newest_date must be datetime.date, not {type(newest_date)}')
         if oldest_date:
             sql += " AND "
         sql += newest_date_sql
-        args.append(newest_date.isoformat())
+        args.append(newest_date.toString(Qt.ISOFormat))
     sql += " ORDER BY start;"
     cur = con.cursor()
     cur.execute(sql, tuple(args))
@@ -404,14 +400,14 @@ def get_schedule_for_stats(con, oldest_date=None, newest_date=None):
         if not isinstance(oldest_date, (datetime.datetime, datetime.date)):
             raise ValueError(f'oldest date must be datetime.date, not {type(oldest_date)}')
         sql += oldest_date_sql
-        args.append(oldest_date.isoformat())
+        args.append(oldest_date.toString(Qt.ISOFormat))
     if newest_date:
         if not isinstance(newest_date, (datetime.datetime, datetime.date)):
             raise ValueError(f'newest date must be datetime.date, not {type(newest_date)}')
         if oldest_date:
             sql += " AND "
         sql += newest_date_sql
-        args.append(newest_date.isoformat())
+        args.append(newest_date.toString(Qt.ISOFormat))
     sql += " ORDER BY schedule.start;"
     cur = con.cursor()
     cur.execute(sql, tuple(args))
