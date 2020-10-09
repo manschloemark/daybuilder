@@ -11,7 +11,7 @@ import sys
 
 #Globals
 DATE_EDIT_FORMAT = "MMM d, yyyy"
-BLOCK_DATE_FORMAT = "%m/%d/%y"
+BLOCK_DATE_FORMAT = "MM/dd/yy"
 UTF8_CHECKMARK = '\u2714'
 UTF8_X = '\u2718'
 
@@ -21,10 +21,10 @@ class DayBlock(QWidget):
         self.setProperty("qclass", "dayblock")
         self.layout = QVBoxLayout(self)
         if view_type == "Weekly":
-            weekday_label = QLabel(f'{day.strftime("%A"):<12}')
+            weekday_label = QLabel(f'{day.toString("dddd"):<12}')
             weekday_label.setProperty("font-class", "block-weekday")
             self.layout.addWidget(weekday_label)
-        date_label = QLabel(day.strftime(BLOCK_DATE_FORMAT))
+        date_label = QLabel(day.toString(BLOCK_DATE_FORMAT))
         date_label.setProperty("font-class", "sub-heading")
         task_string = f'{UTF8_CHECKMARK} {completed_tasks}\n' + \
                       f'{UTF8_X} {total_tasks - completed_tasks}'
@@ -150,28 +150,27 @@ class HistoryView(QWidget):
 
     def load_blocks(self):
         self.clear_container()
-        qdate = self.date_entry.date()
+        start_day = self.date_entry.date()
         view_type = self.view_selection.currentText()
         # defaultdict would work here too, but I need to run
         # a loop to initialize a key for each day in the week
         # anyway
         week = {}
         if view_type == "Weekly":
-            start_day = datetime.date(qdate.year(), qdate.month(), qdate.day())
             num_days = 7
         else:
-            month_range = monthrange(qdate.year(), qdate.month())
-            start_day = datetime.date(qdate.year(), qdate.month(), 1)
+            month_range = monthrange(start_day.year(), start_day.month())
+            start_day = QDate(start_day.year(), start_day.month(), 1)
             num_days = month_range[1]
 
         for i in range(num_days):
-            end_day = start_day + datetime.timedelta(days=i)
+            end_day = start_day.addDays(i)
             week[end_day] = []
         with sqlite3.connect(self.db) as con:
             con.row_factory = sqlite3.Row
             rows = db_interface.get_schedule(con, start_day, end_day)
             for row in rows:
-                day = datetime.datetime.fromisoformat(row['start']).date()
+                day = QDate.fromString(row["start"], Qt.ISODate)
                 week[day].append(row)
             blocks = []
             for day, plans in week.items():
@@ -186,11 +185,7 @@ class HistoryView(QWidget):
             for block in blocks:
                 self.block_layout.addWidget(block)
         else:
-            # I want the monthly view to look like a calendar
-            # With Sunday being the leftmost day (column 0) and Saturday the right (column 6)
-            # Since python's datetime library refers to Monday as day 0 and Sunday as day 6
-            # I have to shift the numbers so Sunday is 0 and Saturday is 6
-            start_col = (start_day.weekday() + 1) % 7
+            start_col = start_day.dayOfWeek() % 7
             for count, block in enumerate(blocks, start=start_col):
                 row = (count // 7) + 1
                 column = count % 7

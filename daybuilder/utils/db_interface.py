@@ -125,7 +125,7 @@ def get_schedule_table(con):
 
 def insert_rating_row(con, date, rating):
     sql = "INSERT INTO ratings VALUES (?, ?)"
-    isodate = date.toString(Qt.ISOFormat)
+    isodate = date.toString(Qt.ISODate)
     cur = con.cursor()
     cur.execute(sql, (isodate, rating))
 
@@ -142,13 +142,13 @@ def get_ratings(con, oldest_date, newest_date):
     if oldest_date or newest_date:
         sql += " WHERE"
     if oldest_date:
-        args.append(oldest_date.toString(Qt.ISOFormat))
+        args.append(oldest_date.toString(Qt.ISODate))
         sql += " date(date) >= ?"
     if newest_date:
         if oldest_date:
             sql += " AND "
         sql += " date(date) <= ?"
-        args.append(newest_date.toString(Qt.ISOFormat))
+        args.append(newest_date.toString(Qt.ISODate))
         
     cur = con.cursor()
     cur.execute(sql, tuple(args))
@@ -157,7 +157,7 @@ def get_ratings(con, oldest_date, newest_date):
 
 def get_rating_by_date(con, date):
     sql = "SELECT rating FROM ratings WHERE date = ?"
-    isodate = date.toString(Qt.ISOFormat)
+    isodate = date.toString(Qt.ISODate)
     cur = con.cursor()
     cur.execute(sql, (isodate,))
 
@@ -208,7 +208,7 @@ def get_table_columns(con, tablename):
 #     rows = cur.fetchall()
 
 #     for row in rows:
-#         starts_before_ends = QDateTime.fromString(row['start'], Qt.ISOFormat).addSecs(row[duration * 60])
+#         starts_before_ends = QDateTime.fromString(row['start'], Qt.ISODate).addSecs(row[duration * 60])
 #         ends_after_starts = 
 #         if (item_type == row['item_type']) and starts_before_ends and ends_after_starts:
 #             return True
@@ -253,7 +253,7 @@ def update_schedule_item(con, active_id, item_id, tags, description, start, dura
           """
     if tags:
         set_tags(con, item_id, tags)
-    iso_start = start.toString(Qt.ISOFormat)
+    iso_start = start.toString(Qt.ISODate)
     cur = con.cursor()
     cur.execute(sql, (description, iso_start, duration, completed, active_id))
 
@@ -325,7 +325,7 @@ def get_schedule_by_date(con, date):
               JOIN items ON items.item_id = schedule.item_id
               WHERE date(start) = ?
               ORDER BY start;"""
-    iso_date = date.toString(Qt.ISOFormat)
+    iso_date = date.toString(Qt.ISODate)
     cur = con.cursor()
     cur.execute(sql, (iso_date,))
     rows = cur.fetchall()
@@ -356,17 +356,13 @@ def get_schedule(con, oldest_date=None, newest_date=None):
     if oldest_date or newest_date:
         sql += " WHERE"
     if oldest_date:
-        if not isinstance(oldest_date, (datetime.datetime, datetime.date)):
-            raise ValueError(f'oldest_date must be datetime.date, not {type(oldest_date)}')
         sql += oldest_date_sql
-        args.append(oldest_date.toString(Qt.ISOFormat))
+        args.append(oldest_date.toString(Qt.ISODate))
     if newest_date:
-        if not isinstance(newest_date, (datetime.datetime, datetime.date)):
-            raise ValueError(f'newest_date must be datetime.date, not {type(newest_date)}')
         if oldest_date:
             sql += " AND "
         sql += newest_date_sql
-        args.append(newest_date.toString(Qt.ISOFormat))
+        args.append(newest_date.toString(Qt.ISODate))
     sql += " ORDER BY start;"
     cur = con.cursor()
     cur.execute(sql, tuple(args))
@@ -400,14 +396,14 @@ def get_schedule_for_stats(con, oldest_date=None, newest_date=None):
         if not isinstance(oldest_date, (datetime.datetime, datetime.date)):
             raise ValueError(f'oldest date must be datetime.date, not {type(oldest_date)}')
         sql += oldest_date_sql
-        args.append(oldest_date.toString(Qt.ISOFormat))
+        args.append(oldest_date.toString(Qt.ISODate))
     if newest_date:
         if not isinstance(newest_date, (datetime.datetime, datetime.date)):
             raise ValueError(f'newest date must be datetime.date, not {type(newest_date)}')
         if oldest_date:
             sql += " AND "
         sql += newest_date_sql
-        args.append(newest_date.toString(Qt.ISOFormat))
+        args.append(newest_date.toString(Qt.ISODate))
     sql += " ORDER BY schedule.start;"
     cur = con.cursor()
     cur.execute(sql, tuple(args))

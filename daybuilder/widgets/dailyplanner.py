@@ -37,16 +37,16 @@ logging.basicConfig()
 # Globals
 DATE_LABEL_FORMAT = "%A, %B %d %Y"
 QDATE_LABEL_FORMAT = "ddd, MMM d yyyy"
-# --------
+
 # This is a useful function but I'm not sure where it belongs yet
-def load_schedule(self):
-    with sqlite3.connect(self.db) as con:
-        con.row_factory = sqlite3.Row
-        rows = db_interface.get_schedule(con)
-        for row in rows:
-            day = datetime.fromisoformat(row["start"]).date()
-            item = scheduleitem.create_schedule_item(row)
-            self.schedule[day].append(item)
+# def load_schedule(self):
+#     with sqlite3.connect(self.db) as con:
+#         con.row_factory = sqlite3.Row
+#         rows = db_interface.get_schedule(con)
+#         for row in rows:
+#             #day = datetime.fromisoformat(row["start"]).date()
+#             item = scheduleitem.create_schedule_item(row)
+#             self.schedule[day].append(item)
 
 
 class DailyPlanner(QWidget):
@@ -60,16 +60,14 @@ class DailyPlanner(QWidget):
         self.schedule_area = ScheduleArea(self.db, parent=self)
 
         self.date_control = DateControl(parent=self)
-        self.date_control.calendar.selectionChanged.connect(self.date_changed)
+        self.date_control.dateChanged.connect(self.date_changed)
+        
 
         self.daily_rating = DailyRating()
         self.daily_rating.choices.idClicked.connect(self.save_rating)
 
         self.planner = Planner(self.db, parent=self)
-        self.planner.item_scheduled.connect(lambda: self.schedule_area.refresh(self.date_control.date))
-
-        self.view_date = self.date_control.date
-        self.date_changed()
+        self.planner.item_scheduled.connect(self.schedule_area.refresh)
 
         self.grid.addWidget(self.date_control, 0, 0)
         self.grid.addWidget(self.daily_rating, 0, 1, 2, 1)
@@ -79,8 +77,10 @@ class DailyPlanner(QWidget):
         self.grid.setColumnStretch(0, 5)
         self.grid.setRowStretch(2, 5)
 
-    def date_changed(self):
-        self.view_date = self.date_control.date
+        self.date_changed(QDate.currentDate())
+
+    def date_changed(self, new_date):
+        self.view_date = new_date
         self.schedule_area.refresh(self.view_date)
         self.schedule_area.fix_scroll_area()
         new_rating = self.get_rating()
@@ -130,8 +130,6 @@ class ScheduleArea(QWidget):
             con.row_factory = sqlite3.Row
             rows = db_interface.get_schedule_by_date(con, self.view_date)
             for row in rows:
-                # This line is honestly redundant but I'll leave it just in case
-                day = datetime.fromisoformat(row["start"]).date()
                 item = scheduleitem.create_schedule_item(row)
                 item.updated.connect(self.update_item)
                 item.deleted.connect(self.delete_item)
@@ -244,31 +242,34 @@ class ScheduleArea(QWidget):
         self.display_items()
 
 
-
 class DateControl(QWidget):
-    """ Custom widget that will be used to change the date for the schedule viewer. I have decided to make a custom class for this so I can keep all of the code in one place """
-
-    date_changed = pyqtSignal()
-    day_rated = pyqtSignal(int)
+    """
+        Custom widget that will be used to change the date for the schedule viewer.
+        I have decided to make a custom class for this so I can keep all of the code in one place
+    """
+    dateChanged = pyqtSignal(QDate)
 
     def __init__(self, *args, **kwargs):
-        super(DateControl, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
+
+        self.init_ui()
+
+    def init_ui(self):
         self.vbox = QVBoxLayout(self)
+
         self.container = QWidget()
-        self.vbox.addWidget(self.container)
+        self.hbox = QHBoxLayout(self.container)
 
         self.calendar = QCalendarWidget()
-        self.vbox.addWidget(self.calendar)
         self.calendar.hide()
-        self.calendar.selectionChanged.connect(self.calendar_date_selected)
+        self.calendar.selectionChanged.connect(self.date_selected)
 
-        self.hbox = QHBoxLayout(self.container)
         self.date_minus_button = QPushButton(
             icon=util.back_icon())
         self.date_minus_button.clicked.connect(self.back_one_day)
         self.date_label = QPushButton(
             icon=util.new_date_icon(),
-            text=self.qdate.toString(QDATE_LABEL_FORMAT),
+            text=self.calendar.selectedDate().toString(QDATE_LABEL_FORMAT),
         )
         self.date_label.clicked.connect(self.open_calendar)
         self.date_plus_button = QPushButton(icon=util.forward_icon())
@@ -278,60 +279,25 @@ class DateControl(QWidget):
         self.hbox.addWidget(self.date_label)
         self.hbox.addWidget(self.date_plus_button)
 
-        self.date_minus_button.setProperty("qclass", "date-control-button")
-        self.date_plus_button.setProperty("qclass", "date-control-button")
-        self.date_label.setProperty("id", "date-control")
-
-    @property
-    def date(self):
-        """
-            Convert the QDate object from the QCalendarWidget to a
-            date object from Python's native datetime library
-            It feels kind of wasteful since this literally calls the
-            qdate property three times but it is convenient for now.
-        """
-        return date(self.qdate.year(), self.qdate.month(), self.qdate.day())
-
-    @property
-    def qdate(self):
-        """
-            Using this to make it easier to refer to the calendar's current date
-            I don't know if this is bad practice or not.
-        """
-        return self.calendar.selectedDate()
+        self.vbox.addWidget(self.container)
+        self.vbox.addWidget(self.calendar)
 
     def back_one_day(self):
-        self.calendar.setSelectedDate(self.qdate.addDays(-1))
+        self.calendar.setSelectedDate(self.calendar.selectedDate().addDays(-1))
 
     def forward_one_day(self):
-        self.calendar.setSelectedDate(self.qdate.addDays(1))
+        self.calendar.setSelectedDate(self.calendar.selectedDate().addDays(1))
 
     def open_calendar(self):
         if self.calendar.isHidden():
             self.calendar.show()
         else:
             self.calendar.hide()
-        # self.date_label.setEnabled(False)
-        # self.date_minus_button.setEnabled(False)
-        # self.date_plus_button.setEnabled(False)
-        # self.calendar = QCalendarWidget()
-        # self.calendar.setSelectedDate(self.date)
 
-    def calendar_date_selected(self):
-        # qdate = self.calendar.selectedDate()
-        # self.date = date(qdate.year(), qdate.month(), qdate.day())
+    def date_selected(self):
+        self.date_label.setText(self.calendar.selectedDate().toString(QDATE_LABEL_FORMAT))
+        self.dateChanged.emit(self.calendar.selectedDate())
 
-        # self.date_label.setEnabled(True)
-        # self.date_minus_button.setEnabled(True)
-        # self.date_plus_button.setEnabled(True)
-        self.refresh()
-
-    def refresh(self):
-        self.date_label.setText(self.qdate.toString(QDATE_LABEL_FORMAT))
-
-# This is a temporary place for this dictionary.
-# It will probably be moved to the ScheduleItem module at some point
-# This will be used to create radio buttons for the item creation form.
 
 class Planner(QWidget):
     """
@@ -566,13 +532,12 @@ class ScheduleForm(QWidget):
         tags = None
         description = self.description_entry.toPlainText()
         qday = self.day.date()
-        start_qtime = self.start.time()
-        start_datetime = datetime(qday.year(), qday.month(), qday.day(), start_qtime.hour(), start_qtime.minute())
+        start_time = self.start.time()
         if self.end_time_checkbox.isChecked():
-            end_qtime = self.end.time()
-            if start_qtime > end_qtime:
+            end_time = self.end.time()
+            if start_time > end_time:
                 warnings.append("Start time should be earlier than End time")
-            duration = (datetime(qday.year(), qday.month(), qday.day(), end_qtime.hour(), end_qtime.minute()) - start_datetime).seconds / 60
+            duration = int(start_time.secsTo(end_time) / 60)
         else:
             duration = 0
         if item_type == -1:
@@ -584,7 +549,7 @@ class ScheduleForm(QWidget):
             msg.warning(self, f"Invalid Info! [{len(warnings)}]", "\n\n".join(warnings), QMessageBox.Ok)
             return
 
-        self.submit_data(item_type, item_name, tags, description, start_datetime, duration)
+        self.submit_data(item_type, item_name, tags, description, QDateTime(qday, start_time), duration)
 
     def submit_data(self, item_type, item_name, tags, description, start, duration):
         with sqlite3.connect(self.db) as con:
