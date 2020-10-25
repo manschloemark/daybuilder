@@ -190,29 +190,30 @@ def get_table_columns(con, tablename):
 # NOTE I don't know if I need this?
 # NOTE If it turns out I do need this I'll have to convert it to
 #      work with QDate
-# def time_overlap(con, item_type, start, duration):
-#     """
-#         User Defined Function that prevents you from scheduling
-#         two items of the same type with overlapping times.
-#         I am doing this because I'm not sure how I would display
-#         two Tasks or timeframes that have overlapping times
+def time_overlap(con, item_type, start, duration):
+    """
+        User Defined Function that prevents you from scheduling
+        two items of the same type with overlapping times.
+        I am doing this because I'm not sure how I would display
+        two Tasks or timeframes that have overlapping times
 
-#         Created in the database with sqlite3.create_function
-#         in the create_schedule_table function
-#     """
-#     con.row_factory = sqlite3.Row # NOTE : there has to be a better way to handle passing database connections around
-#     sql = """SELECT item_type, start, duration FROM schedule
-#              JOIN items on items.item_id = schedule.item_id"""
-#     cur = con.cursor()
-#     cur.execute(sql)
-#     rows = cur.fetchall()
+        Created in the database with sqlite3.create_function
+        in the create_schedule_table function
+    """
+    con.row_factory = sqlite3.Row # NOTE : there has to be a better way to handle passing database connections around
+    sql = """SELECT item_type, start, duration FROM schedule
+             JOIN items on items.item_id = schedule.item_id"""
+    cur = con.cursor()
+    cur.execute(sql)
+    rows = cur.fetchall()
 
-#     for row in rows:
-#         starts_before_ends = QDateTime.fromString(row['start'], Qt.ISODate).addSecs(row[duration * 60])
-#         ends_after_starts = 
-#         if (item_type == row['item_type']) and starts_before_ends and ends_after_starts:
-#             return True
-#     return False
+    for row in rows:
+        row_qdatetime = QDateTime.fromString(row['start'], Qt.ISODate)
+        starts_before_ends = start < row_qdatetime.addSecs(row['duration'] * 60)
+        ends_after_starts = start.addSecs(duration * 60) > row_qdatetime
+        if (item_type == row['item_type']) and starts_before_ends and ends_after_starts:
+           return True
+    return False
 
 # Saving data
 
@@ -231,7 +232,7 @@ def create_schedule_item(con, item_type, item_name, tags, description, start, du
     item_id = get_item_id(con, item_type, item_name)
     if tags:
         set_tags(con, item_id, tags)
-    iso_start = start.isoformat(timespec="minutes")
+    iso_start = start.toString(Qt.ISODate)
     if duration is None:
         duration = 0
     # I don't think you will ever schedule an already completed task

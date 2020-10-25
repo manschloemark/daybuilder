@@ -15,18 +15,18 @@ import logging
 
 def load_ratings_dataframe(rows):
     column_names = rows[0].keys()
-    ratings = pd.DataFrame(rows, columns=column_names).astype({'date': 'datetime64'})
+    ratings = pd.DataFrame(rows, columns=column_names).astype({"date": "datetime64"})
     return ratings
 
 
 def load_items_dataframe(schedule_rows):
-    types = {'start': 'datetime64'}
+    types = {"start": "datetime64"}
     column_names = schedule_rows[0].keys()
     items = pd.DataFrame(schedule_rows, columns=column_names).astype(types)
 
     # Convert everything to proper data types
-    completion_dict = {'NaN': None, 0: False, 1: True}
-    items['completed'] = items['completed'].map(completion_dict)
+    completion_dict = {"NaN": None, 0: False, 1: True}
+    items["completed"] = items["completed"].map(completion_dict)
 
     return items
 
@@ -39,11 +39,15 @@ def load_data(database, start_date=None, end_date=None):
         if ratings_rows:
             ratings = load_ratings_dataframe(ratings_rows)
         else:
-            ratings = pd.DataFrame(columns=db_interface.get_table_columns(con, "ratings"))
+            ratings = pd.DataFrame(
+                columns=db_interface.get_table_columns(con, "ratings")
+            )
         if schedule_rows:
             items = load_items_dataframe(schedule_rows)
         else:
-            items = pd.DataFrame(columns=db_interface.get_table_columns(con, "schedule"))
+            items = pd.DataFrame(
+                columns=db_interface.get_table_columns(con, "schedule")
+            )
 
     return ratings, items
 
